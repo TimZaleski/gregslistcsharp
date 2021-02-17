@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using gregslistcsharp.db;
 using gregslistcsharp.Models;
+using gregslistcsharp.Services;
 
 namespace gregslistcsharp.Controllers
 {
@@ -9,13 +10,18 @@ namespace gregslistcsharp.Controllers
   [Route("api/jobs")]
   public class JobsController : ControllerBase
   {
+    private readonly JobsService _ds;
+    public JobsController(JobsService ds)
+    {
+      _ds = ds;
+    }
 
     [HttpGet]
     public ActionResult<IEnumerable<Job>> Get()
     {
       try
       {
-        return Ok(FAKEDB.Jobs);
+        return Ok(_ds.Get());
       }
       catch (System.Exception err)
       {
@@ -29,8 +35,8 @@ namespace gregslistcsharp.Controllers
     {
       try
       {
-        Job jobToReturn = FAKEDB.Jobs.Find(j => j.Id == id);
-        return Ok(jobToReturn);
+        Job job = _ds.Get(id);
+        return Ok(job);
       }
       catch (System.Exception err)
       {
@@ -46,8 +52,8 @@ namespace gregslistcsharp.Controllers
     {
       try
       {
-        FAKEDB.Jobs.Add(newJob);
-        return Ok(newJob);
+        Job job = _ds.Create(newJob);
+        return Ok(job);
       }
       catch (System.Exception err)
       {
@@ -61,12 +67,8 @@ namespace gregslistcsharp.Controllers
     {
       try
       {
-        Job jobToRemove = FAKEDB.Jobs.Find(j => j.Id == jobId);
-        if (FAKEDB.Jobs.Remove(jobToRemove))
-        {
-          return Ok("Job Purchased");
-        };
-        throw new System.Exception("Job does not exist");
+        _ds.Delete(jobId);
+        return Ok("Deleted");
       }
       catch (System.Exception err)
       {
@@ -75,12 +77,12 @@ namespace gregslistcsharp.Controllers
     }
 
     [HttpPut("{jobId}")]  
-    public ActionResult<string> UpdateJobRate(Job job, string jobId) {  
+    public ActionResult<string> UpdateJob([FromBody] Job updated, string id) {  
       try
       { 
-        Job jobToMod = FAKEDB.Jobs.Find(j => j.Id == jobId);
-        jobToMod.Rate = job.Rate;
-        return Ok("Job rate modified");
+        updated.Id = id;
+        Job job = _ds.Edit(updated);
+        return Ok(job);
       }
       catch (System.Exception err)
       {  

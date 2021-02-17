@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using gregslistcsharp.db;
 using gregslistcsharp.Models;
+using gregslistcsharp.Services;
 
 namespace gregslistcsharp.Controllers
 {
@@ -10,12 +11,18 @@ namespace gregslistcsharp.Controllers
   public class CarsController : ControllerBase
   {
 
+    private readonly CarsService _ds;
+    public CarsController(CarsService ds)
+    {
+      _ds = ds;
+    }
+
     [HttpGet]
     public ActionResult<IEnumerable<Car>> Get()
     {
       try
       {
-        return Ok(FAKEDB.Cars);
+        return Ok(_ds.Get());
       }
       catch (System.Exception err)
       {
@@ -29,8 +36,8 @@ namespace gregslistcsharp.Controllers
     {
       try
       {
-        Car carToReturn = FAKEDB.Cars.Find(c => c.Id == id);
-        return Ok(carToReturn);
+        Car car = _ds.Get(id);
+        return Ok(car);
       }
       catch (System.Exception err)
       {
@@ -46,9 +53,8 @@ namespace gregslistcsharp.Controllers
     {
       try
       {
-        FAKEDB.Cars.Add(newCar);
-        return Ok(newCar);
-
+        Car car = _ds.Create(newCar);
+        return Ok(car);
       }
       catch (System.Exception err)
       {
@@ -62,12 +68,8 @@ namespace gregslistcsharp.Controllers
     {
       try
       {
-        Car carToRemove = FAKEDB.Cars.Find(c => c.Id == carId);
-        if (FAKEDB.Cars.Remove(carToRemove))
-        {
-          return Ok("Car Purchased");
-        };
-        throw new System.Exception("Car does not exist");
+        _ds.Delete(carId);
+        return Ok("Deleted");
       }
       catch (System.Exception err)
       {
@@ -76,12 +78,12 @@ namespace gregslistcsharp.Controllers
     }
 
     [HttpPut("{carId}")]  
-    public ActionResult<string> UpdateCarPrice(Car car, string carId) {  
+    public ActionResult<string> UpdateCar([FromBody] Car updated, string id) {  
       try
       { 
-        Car carToMod = FAKEDB.Cars.Find(c => c.Id == carId);
-        carToMod.Price = car.Price;
-        return Ok("Car price modified");
+        updated.Id = id;
+        Car car = _ds.Edit(updated);
+        return Ok(car);
       }
       catch (System.Exception err)
       {  
@@ -89,20 +91,5 @@ namespace gregslistcsharp.Controllers
       }
       
     }  
-
-
-    //NOTE if you were needing to further specify your route, do so in the httpattribute accordingly.
-    // [HttpGet("{id}/kittens")]
-    // public ActionResult<IEnumerable<Cat>> GetTest()
-    // {
-    //   try
-    //   {
-    //     return Ok(FAKEDB.Cats);
-    //   }
-    //   catch (System.Exception err)
-    //   {
-    //     return BadRequest(err.Message);
-    //   }
-    // }
   }
 }

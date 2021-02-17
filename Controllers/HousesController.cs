@@ -2,20 +2,26 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using gregslistcsharp.db;
 using gregslistcsharp.Models;
+using gregslistcsharp.Services;
 
 namespace gregslistcsharp.Controllers
 {
   [ApiController]
   [Route("api/houses")]
-  public class CarsController : ControllerBase
+  public class HousesController : ControllerBase
   {
+    private readonly HousesService _ds;
+    public HousesController(HousesService ds)
+    {
+      _ds = ds;
+    }
 
     [HttpGet]
     public ActionResult<IEnumerable<House>> Get()
     {
       try
       {
-        return Ok(FAKEDB.Houses);
+        return Ok(_ds.Get());
       }
       catch (System.Exception err)
       {
@@ -29,8 +35,8 @@ namespace gregslistcsharp.Controllers
     {
       try
       {
-        House houseToReturn = FAKEDB.Houses.Find(h => h.Id == id);
-        return Ok(houseToReturn);
+        House house = _ds.Get(id);
+        return Ok(house);
       }
       catch (System.Exception err)
       {
@@ -46,8 +52,8 @@ namespace gregslistcsharp.Controllers
     {
       try
       {
-        FAKEDB.Houses.Add(newHouse);
-        return Ok(newHouse);
+        House house = _ds.Create(newHouse);
+        return Ok(house);
       }
       catch (System.Exception err)
       {
@@ -61,12 +67,8 @@ namespace gregslistcsharp.Controllers
     {
       try
       {
-        House houseToRemove = FAKEDB.Houses.Find(h => h.Id == houseId);
-        if (FAKEDB.Houses.Remove(houseToRemove))
-        {
-          return Ok("House Purchased");
-        };
-        throw new System.Exception("House does not exist");
+         _ds.Delete(houseId);
+        return Ok("Bought");
       }
       catch (System.Exception err)
       {
@@ -75,12 +77,12 @@ namespace gregslistcsharp.Controllers
     }
 
     [HttpPut("{houseId}")]  
-    public ActionResult<string> UpdateHousePrice(House house, string houseId) {  
+    public ActionResult<string> UpdateHouse([FromBody] House updated, string id) {  
       try
       { 
-        House houseToMod = FAKEDB.Houses.Find(h => h.Id == houseId);
-        houseToMod.Price = house.Price;
-        return Ok("House price modified");
+        updated.Id = id;
+        House house = _ds.Edit(updated);
+        return Ok(house);
       }
       catch (System.Exception err)
       {  
